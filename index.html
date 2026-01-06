@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的个人导航 - 效率优先</title>
+    <!-- 1. 优先执行主题检测，防止闪烁 -->
+    <script>
+        // 立即执行主题检查
+        (function() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,13 +23,20 @@
                 extend: {
                     colors: {
                         dark: {
-                            bg: '#0f172a',
-                            card: 'rgba(30, 41, 59, 0.8)',
-                            border: 'rgba(255, 255, 255, 0.1)'
+                            bg: '#020617',     // Slate-950: 更深邃的背景
+                            sidebar: '#0f172a', // Slate-900: 侧边栏背景
+                            card: 'rgba(30, 41, 59, 0.6)', // Slate-800: 半透明卡片
+                            border: 'rgba(255, 255, 255, 0.08)'
                         }
                     },
                     animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        }
                     }
                 }
             }
@@ -35,31 +53,49 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
+        /* --- 动效核心 CSS --- */
+        
+        /* 侧边栏图标摇摆动画 */
+        @keyframes subtle-shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .nav-link:hover i, .nav-link:hover svg {
+            animation: subtle-shake 0.4s ease-in-out;
+        }
+
+        /* 卡片样式优化 */
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.6);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         
+        /* 暗色模式卡片：统一深色调，消除灰白块 */
         .dark .glass-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            background: rgba(30, 41, 59, 0.4); /* 更通透的深色 */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             border-color: #3b82f6;
         }
         
         .dark .glass-card:hover {
-            border-color: #60a5fa;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            background: rgba(30, 41, 59, 0.8); /* 悬停时加深 */
+            border-color: #3b82f6;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
         }
 
+        /* 滚动条美化 */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
@@ -69,14 +105,12 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background-color: #cbd5e1;
             border-radius: 20px;
-            border: 2px solid transparent;
-            background-clip: content-box;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #334155; /* Slate-700 */
         }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb {
             background-color: #94a3b8;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
         }
 
         .search-engine-btn {
@@ -87,7 +121,7 @@
             align-items: center;
             gap: 4px;
         }
-        .search-engine-btn:hover { opacity: 1; }
+        .search-engine-btn:hover { opacity: 1; transform: translateY(-1px); }
         .search-engine-btn.active {
             opacity: 1;
             transform: scale(1.05);
@@ -98,19 +132,22 @@
 
         #mobile-menu { transition: transform 0.3s ease-in-out; }
         
+        /* 键盘快捷键提示 */
         .kbd-shortcut {
             display: inline-flex;
             align-items: center;
             border: 1px solid #e2e8f0;
             border-radius: 4px;
-            padding: 0 4px;
+            padding: 0 6px;
             font-size: 12px;
             color: #94a3b8;
             margin-left: 8px;
+            background-color: #f8fafc;
         }
         .dark .kbd-shortcut {
-            border-color: #475569;
-            color: #64748b;
+            border-color: #334155;
+            color: #94a3b8;
+            background-color: #1e293b;
         }
 
         aside { transition: width 0.3s ease; }
@@ -118,6 +155,7 @@
         aside.collapsed .nav-link { padding-left: 0; padding-right: 0; justify-content: center; }
         aside.collapsed h1 { display: none; }
 
+        /* 搜索框吸顶背景 */
         .sticky-search-container {
             transition: background-color 0.3s, backdrop-filter 0.3s, box-shadow 0.3s, padding-top 0.3s, padding-bottom 0.3s;
             z-index: 50;
@@ -125,13 +163,50 @@
         .is-stuck {
             background-color: rgba(241, 245, 249, 0.95);
             backdrop-filter: blur(16px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .dark .is-stuck {
-            background-color: rgba(15, 23, 42, 0.95);
+            background-color: rgba(15, 23, 42, 0.95); /* 接近纯黑 */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Loading Screen */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        .dark #preloader {
+            background-color: #020617; /* Slate-950 */
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Entrance Animation */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .card-enter-active {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
         }
 
         @media (max-width: 768px) {
@@ -139,7 +214,12 @@
         }
     </style>
 </head>
-<body class="flex flex-col md:flex-row h-screen bg-[#f1f5f9] dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
+<body class="flex flex-col md:flex-row h-screen bg-[#f1f5f9] dark:bg-[#020617] text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
 
     <!-- Mobile Header -->
     <div class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 flex-shrink-0">
@@ -160,10 +240,10 @@
     </div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-full md:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 md:p-8 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-all duration-300 z-40 shadow-xl md:shadow-none h-full overflow-y-auto custom-scrollbar flex-shrink-0">
+    <aside id="sidebar" class="w-full md:w-72 bg-white/80 dark:bg-[#0f172a]/90 backdrop-blur-md border-r border-slate-200 dark:border-slate-800 p-6 md:p-8 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-all duration-300 z-40 shadow-xl md:shadow-none h-full overflow-y-auto custom-scrollbar flex-shrink-0">
         <div class="flex items-center justify-between mb-8 md:mb-10 h-10">
             <div class="flex items-center gap-4 overflow-hidden whitespace-nowrap">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-none">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-none transition-transform hover:scale-110 hover:rotate-3">
                     <i class="fas fa-compass text-xl"></i>
                 </div>
                 <h1 class="text-2xl font-bold tracking-tight opacity-100 transition-opacity duration-300">快捷导航</h1>
@@ -181,7 +261,7 @@
         </div>
 
         <nav class="space-y-2 category-sidebar pr-2">
-            <a href="#featured" class="nav-link flex items-center gap-4 px-5 py-4 text-blue-700 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 rounded-2xl transition-all font-bold text-lg group shadow-sm ring-1 ring-blue-100 dark:ring-blue-800" title="常用推荐">
+            <a href="#featured" class="nav-link flex items-center gap-4 px-5 py-4 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-2xl transition-all font-bold text-lg group shadow-sm ring-1 ring-blue-100 dark:ring-blue-800" title="常用推荐">
                 <i class="fas fa-star text-blue-500 dark:text-blue-400 text-xl group-hover:scale-110 transition-transform flex-shrink-0"></i> <span class="nav-text">常用推荐</span>
             </a>
             <a href="#core-ai" class="nav-link flex items-center gap-4 px-5 py-4 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 rounded-2xl transition-all font-medium text-lg group" title="核心 AI">
@@ -203,7 +283,7 @@
                 <i class="fas fa-book-open text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 text-xl w-6 text-center transition-colors flex-shrink-0"></i> <span class="nav-text">社交/阅读</span>
             </a>
             <a href="#entertainment" class="nav-link flex items-center gap-4 px-5 py-4 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 rounded-2xl transition-all font-medium text-lg group" title="影音娱乐">
-                <i class="fas fa-play-circle text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 text-xl w-6 text-center transition-colors flex-shrink-0"></i> <span class="nav-text">影音娱乐</span>
+                <i class="fas fa-clapperboard text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 text-xl w-6 text-center transition-colors flex-shrink-0"></i> <span class="nav-text">影音娱乐</span>
             </a>
         </nav>
     </aside>
@@ -213,7 +293,7 @@
     <main class="flex-1 h-full overflow-y-auto custom-scrollbar relative" id="main-content">
         
         <div class="px-6 pt-6 md:px-12 md:pt-12 pb-10 flex flex-col items-center justify-center text-slate-700 dark:text-slate-300">
-            <div id="clockTime" class="text-6xl md:text-7xl font-bold tracking-tight mb-2 font-mono text-slate-800 dark:text-white transition-colors">00:00:00</div>
+            <div id="clockTime" class="text-6xl md:text-7xl font-bold tracking-tight mb-2 font-mono text-slate-800 dark:text-white transition-colors cursor-default select-none hover:scale-105 transition-transform duration-500">00:00:00</div>
             <div id="clockDate" class="text-lg md:text-xl font-medium opacity-80">Loading Date...</div>
         </div>
 
@@ -247,30 +327,30 @@
             </div>
         </div>
 
-        <div id="content" class="px-6 pb-6 md:px-12 md:pb-12 space-y-16">
+        <div id="content" class="px-6 pb-6 md:px-12 md:pb-12 space-y-16" style="opacity: 0; transition: opacity 0.5s ease-out;">
             <!-- 常用推荐 -->
             <section id="featured">
                 <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-8 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
                     <i class="fas fa-star text-yellow-500 text-2xl"></i> 常用推荐
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                    <a href="https://www.notion.so/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500" data-name="Notion">
+                    <a href="https://www.notion.so/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500">
                         <i class="fas fa-cube text-6xl text-slate-800 dark:text-slate-200 drop-shadow-sm"></i>
                         <span class="text-xl font-bold text-slate-800 dark:text-slate-200">Notion</span>
                     </a>
-                    <a href="https://gemini.google.com/app" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500" data-name="Gemini">
+                    <a href="https://gemini.google.com/app" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500">
                         <i class="fab fa-google text-6xl text-blue-500 drop-shadow-sm"></i>
                         <span class="text-xl font-bold text-slate-800 dark:text-slate-200">Gemini</span>
                     </a>
-                    <a href="https://notebooklm.google.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500" data-name="NotebookLM">
+                    <a href="https://notebooklm.google.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500">
                         <i class="fas fa-book text-6xl text-teal-600 drop-shadow-sm"></i>
                         <span class="text-xl font-bold text-slate-800 dark:text-slate-200">NotebookLM</span>
                     </a>
-                    <a href="https://www.youtube.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500" data-name="YouTube">
+                    <a href="https://www.youtube.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500">
                         <i class="fab fa-youtube text-6xl text-red-600 drop-shadow-sm"></i>
                         <span class="text-xl font-bold text-slate-800 dark:text-slate-200">YouTube</span>
                     </a>
-                    <a href="https://www.bilibili.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500" data-name="Bilibili">
+                    <a href="https://www.bilibili.com/" target="_blank" class="nav-card glass-card p-8 rounded-3xl flex flex-col items-center text-center gap-5 border-2 border-blue-50 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500">
                         <i class="fab fa-bilibili text-6xl text-pink-500 drop-shadow-sm"></i>
                         <span class="text-xl font-bold text-slate-800 dark:text-slate-200">Bilibili</span>
                     </a>
@@ -283,31 +363,31 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 核心对话 AI
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://chatgpt.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="ChatGPT">
+                    <a href="https://chatgpt.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-robot text-5xl text-emerald-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">ChatGPT</span>
                     </a>
-                    <a href="https://chat.deepseek.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="DeepSeek">
+                    <a href="https://chat.deepseek.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-brain text-5xl text-blue-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">DeepSeek</span>
                     </a>
-                    <a href="https://www.doubao.com/chat/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="豆包">
+                    <a href="https://www.doubao.com/chat/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-comment-dots text-5xl text-blue-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">豆包</span>
                     </a>
-                    <a href="https://www.kimi.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Kimi">
+                    <a href="https://www.kimi.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-moon text-5xl text-slate-700 dark:text-slate-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Kimi</span>
                     </a>
-                    <a href="https://chat.qwen.ai/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="通义千问">
+                    <a href="https://chat.qwen.ai/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-comments text-5xl text-purple-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">通义千问</span>
                     </a>
-                    <a href="https://metaso.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="秘塔搜索">
+                    <a href="https://metaso.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-search text-5xl text-teal-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">秘塔搜索</span>
                     </a>
-                    <a href="https://grok.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Grok">
+                    <a href="https://grok.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-bolt text-5xl text-slate-800 dark:text-slate-200"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Grok</span>
                     </a>
@@ -320,31 +400,31 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> AI 开发与模型服务
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://cloud.dify.ai/apps" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Dify">
+                    <a href="https://cloud.dify.ai/apps" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-layer-group text-5xl text-blue-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Dify</span>
                     </a>
-                    <a href="https://www.coze.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Coze">
+                    <a href="https://www.coze.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-cubes text-5xl text-teal-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Coze 扣子</span>
                     </a>
-                    <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="AI Studio">
+                    <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-laptop-code text-5xl text-slate-700 dark:text-slate-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">AI Studio</span>
                     </a>
-                    <a href="https://account.siliconflow.cn/zh/login" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="硅基流动">
+                    <a href="https://account.siliconflow.cn/zh/login" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-microchip text-5xl text-indigo-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">硅基流动</span>
                     </a>
-                    <a href="https://bailian.console.aliyun.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="阿里云百炼">
+                    <a href="https://bailian.console.aliyun.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-cloud text-5xl text-orange-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">阿里云百炼</span>
                     </a>
-                    <a href="https://platform.deepseek.com/usage" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="DeepSeek API">
+                    <a href="https://platform.deepseek.com/usage" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-terminal text-5xl text-blue-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">DeepSeek API</span>
                     </a>
-                    <a href="https://modelscope.cn/mcp" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="MCP 魔搭">
+                    <a href="https://modelscope.cn/mcp" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-cube text-5xl text-purple-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">MCP 魔搭</span>
                     </a>
@@ -357,15 +437,15 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 提示词工程
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://youmind.com/zh-CN/nano-banana-pro-prompts?categories=profile-avatar" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="YouMind 提示词">
+                    <a href="https://youmind.com/zh-CN/nano-banana-pro-prompts?categories=profile-avatar" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-lightbulb text-5xl text-indigo-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">YouMind 提示词</span>
                     </a>
-                    <a href="https://promptmagic.dev/u/cosmic-dragon-35lpzy" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="PromptMagic">
+                    <a href="https://promptmagic.dev/u/cosmic-dragon-35lpzy" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-magic text-5xl text-purple-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">PromptMagic</span>
                     </a>
-                    <a href="https://github.com/op7418/guizang-s-prompt?tab=readme-ov-file" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="归藏提示词">
+                    <a href="https://github.com/op7418/guizang-s-prompt?tab=readme-ov-file" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-yin-yang text-5xl text-slate-800 dark:text-white"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">归藏提示词</span>
                     </a>
@@ -378,27 +458,27 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 创意与影像制作
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://haowallpaper.com/homeView?page=1&sortType=3&rows=9&wpType=1" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="好壁纸">
+                    <a href="https://haowallpaper.com/homeView?page=1&sortType=3&rows=9&wpType=1" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-images text-5xl text-teal-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">好壁纸</span>
                     </a>
-                    <a href="https://playground.bfl.ai/image/generate" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="FLUX Playground">
+                    <a href="https://playground.bfl.ai/image/generate" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-paint-brush text-5xl text-pink-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">FLUX Playground</span>
                     </a>
-                    <a href="https://dreamina.capcut.com/ai-tool/home" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="即梦 (Dreamina)">
+                    <a href="https://dreamina.capcut.com/ai-tool/home" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-video text-5xl text-purple-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">即梦 (Dreamina)</span>
                     </a>
-                    <a href="https://www.doubao.com/chat/create-image" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="豆包生图">
+                    <a href="https://www.doubao.com/chat/create-image" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-wand-magic-sparkles text-5xl text-blue-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">豆包生图</span>
                     </a>
-                    <a href="https://modelscope.cn/aigc/videoGeneration" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="魔搭视频生成">
+                    <a href="https://modelscope.cn/aigc/videoGeneration" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-film text-5xl text-slate-700 dark:text-slate-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">魔搭视频生成</span>
                     </a>
-                    <a href="https://magiceraser.org/zh/remove-watermark-from-image/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="图片去水印">
+                    <a href="https://magiceraser.org/zh/remove-watermark-from-image/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-eraser text-5xl text-red-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">图片去水印</span>
                     </a>
@@ -411,12 +491,12 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 个人效率与生产力
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://ai.feishu.cn/drive/home/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="飞书 AI">
+                    <a href="https://ai.feishu.cn/drive/home/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-paper-plane text-5xl text-blue-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">飞书 AI</span>
                     </a>
-                    <a href="https://www.dida365.com/webapp/#q/all/tasks" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="滴答清单">
-                        <i class="fas fa-check-circle text-5xl text-blue-500"></i>
+                    <a href="https://www.dida365.com/webapp/#q/all/tasks" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
+                        <i class="fas fa-check-double text-5xl text-blue-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">滴答清单</span>
                     </a>
                 </div>
@@ -428,27 +508,27 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 社交、资讯与社区
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://www.jeffsu.org/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Jeff Su">
+                    <a href="https://www.jeffsu.org/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-briefcase text-5xl text-orange-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Jeff Su</span>
                     </a>
-                    <a href="https://craighart.notion.site/25fe8a5565ac80868fddf03d2018b10b" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Notion 资源库">
+                    <a href="https://craighart.notion.site/25fe8a5565ac80868fddf03d2018b10b" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-cube text-5xl text-slate-800 dark:text-slate-200"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Notion 资源库</span>
                     </a>
-                    <a href="https://z0x8z83m7x.feishu.cn/docx/CpRpddnOQoVPpKxeXnAc3vBvn6f" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="飞书文档资源">
+                    <a href="https://z0x8z83m7x.feishu.cn/docx/CpRpddnOQoVPpKxeXnAc3vBvn6f" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-file-lines text-5xl text-blue-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">飞书文档资源</span>
                     </a>
-                    <a href="https://linux.do/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Linux.do">
+                    <a href="https://linux.do/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fab fa-linux text-5xl text-slate-800 dark:text-slate-200"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Linux.do</span>
                     </a>
-                    <a href="https://www.reddit.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Reddit">
+                    <a href="https://www.reddit.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fab fa-reddit text-5xl text-orange-600"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Reddit</span>
                     </a>
-                    <a href="https://weread.qq.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="微信读书">
+                    <a href="https://weread.qq.com/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-book-reader text-5xl text-blue-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">微信读书</span>
                     </a>
@@ -461,19 +541,19 @@
                     <span class="w-3 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-300 dark:shadow-blue-900"></span> 影音娱乐工具
                 </h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                    <a href="https://watcha.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="Watcha">
+                    <a href="https://watcha.cn/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-clapperboard text-5xl text-pink-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">Watcha</span>
                     </a>
-                    <a href="http://www.qmjx.vip/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="视频解析">
+                    <a href="http://www.qmjx.vip/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-unlock-alt text-5xl text-yellow-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">视频解析</span>
                     </a>
-                    <a href="http://zhouql.vip/bilibili/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="B站下载">
+                    <a href="http://zhouql.vip/bilibili/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-download text-5xl text-blue-500"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">B站下载</span>
                     </a>
-                    <a href="https://www.hdmoli.pro/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800" data-name="HDmoli 影视">
+                    <a href="https://www.hdmoli.pro/" target="_blank" class="nav-card glass-card p-6 rounded-3xl flex flex-col items-center text-center gap-4 hover:bg-white dark:hover:bg-slate-800">
                         <i class="fas fa-compact-disc text-5xl text-slate-600 dark:text-slate-400"></i>
                         <span class="text-lg font-semibold text-slate-700 dark:text-slate-300">HDmoli 影视</span>
                     </a>
@@ -490,6 +570,18 @@
         const sections = document.querySelectorAll('section');
         const searchIcon = document.getElementById('searchIcon');
         const mainContent = document.getElementById('main-content');
+        const preloader = document.getElementById('preloader');
+        const body = document.body;
+
+        // Hide preloader when loaded
+        window.addEventListener('load', () => {
+            preloader.style.opacity = '0';
+            preloader.style.visibility = 'hidden';
+            
+            // Trigger entrance animation for content
+            const content = document.getElementById('content');
+            content.style.opacity = '1';
+        });
         
         // 搜索引擎配置 - 修正为 Font Awesome Class 字符串
         const engines = {
@@ -752,7 +844,15 @@
         }
         setInterval(updateClock, 1000);
         updateClock(); 
+
+        // --- Add entrance animation to cards ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.nav-card');
+            cards.forEach((card, index) => {
+                card.classList.add('card-enter-active');
+                card.style.animationDelay = `${index * 50}ms`; // Staggered delay: 50ms per card
+            });
+        });
     </script>
 </body>
-
 </html>
