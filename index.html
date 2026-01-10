@@ -45,8 +45,8 @@
     <!-- 使用国内极速源 360 Baomitu CDN 加载 Font Awesome -->
     <link href="https://lib.baomitu.com/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
+        /* 字体：优先系统字体（国内网络更稳定）；如需 Inter 可自行恢复 Google Fonts */
+
         html, body {
             height: 100%;
             overflow: hidden;
@@ -315,7 +315,7 @@
                 </div>
 
                 <div class="relative group">
-                    <input type="text" id="searchInput" placeholder="" 
+                    <input type="text" id="searchInput" placeholder="搜索…" 
                         class="w-full pl-14 pr-6 py-5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-full shadow-lg shadow-blue-500/5 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium text-slate-800 dark:text-white">
                     <div class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 flex items-center justify-center transition-colors group-focus-within:text-blue-500">
                         <i id="searchIcon" class="fab fa-google text-xl"></i>
@@ -566,7 +566,16 @@
     <script>
         // --- 核心逻辑 ---
         const searchInput = document.getElementById('searchInput');
-        const cards = document.querySelectorAll('.nav-card');
+
+        // 安全：为所有 target=_blank 的外链补上 noopener/noreferrer，避免 window.opener 风险
+        document.querySelectorAll('a[target="_blank"]').forEach(a => {
+            const rel = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
+            if (!rel.includes('noopener')) rel.push('noopener');
+            if (!rel.includes('noreferrer')) rel.push('noreferrer');
+            a.setAttribute('rel', rel.join(' '));
+        });
+
+const cards = document.querySelectorAll('.nav-card');
         const sections = document.querySelectorAll('section');
         const searchIcon = document.getElementById('searchIcon');
         const mainContent = document.getElementById('main-content');
@@ -585,10 +594,10 @@
         
         // 搜索引擎配置 - 修正为 Font Awesome Class 字符串
         const engines = {
-            google: { url: 'https://www.google.com/search?q=', icon: 'fab fa-google' },
-            baidu: { url: 'https://www.baidu.com/s?wd=', icon: 'fas fa-paw' },
-            bing: { url: 'https://www.bing.com/search?q=', icon: 'fab fa-microsoft' },
-            yiyan: { url: 'https://yiyan.baidu.com/?q=', icon: 'fas fa-robot' }
+            google: { url: 'https://www.google.com/search?q=', icon: 'fab fa-google', placeholder: 'Google 搜索…' },
+            baidu: { url: 'https://www.baidu.com/s?wd=', icon: 'fas fa-paw', placeholder: '百度搜索…' },
+            bing: { url: 'https://www.bing.com/search?q=', icon: 'fab fa-microsoft', placeholder: 'Bing 搜索…' },
+            yiyan: { url: 'https://yiyan.baidu.com/?q=', icon: 'fas fa-robot', placeholder: '文心一言…' }
         };
 
         // 1. 初始化搜索引擎 (读取 LocalStorage)
@@ -610,7 +619,8 @@
 
             // 更新输入框图标 - 重置并添加新类名
             searchIcon.className = `${engines[engineKey].icon} text-xl`;
-        }
+                    searchInput.placeholder = engines[engineKey].placeholder || '搜索…';
+}
 
         // 搜索框智能逻辑
         searchInput.addEventListener('input', (e) => {
@@ -636,8 +646,9 @@
 
             sections.forEach(section => {
                 if (isFiltering) {
-                    const visibleCards = section.querySelectorAll('.nav-card[style="display: flex;"]');
-                    section.style.display = visibleCards.length > 0 ? 'block' : 'none';
+                    const visible = Array.from(section.querySelectorAll('.nav-card'))
+                        .some(card => card.style.display !== 'none');
+                    section.style.display = visible ? 'block' : 'none';
                 } else {
                     section.style.display = 'block';
                 }
